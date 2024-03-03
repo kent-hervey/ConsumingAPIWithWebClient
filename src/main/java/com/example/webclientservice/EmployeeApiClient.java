@@ -1,11 +1,9 @@
 package com.example.webclientservice;
 
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.reactive.function.client.WebClient;
-import reactor.core.publisher.Mono;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
 
-import java.net.URI;
 
 public class EmployeeApiClient {
 
@@ -15,35 +13,24 @@ public class EmployeeApiClient {
         // Create a WebClient instance
         WebClient webClient = WebClient.create();
 
-        // Send the GET request and handle the response
-        webClient.get()
-                .uri(URI.create(url))
-                .retrieve()
-                .bodyToMono(String.class) // Convert response body to String
-                .subscribe(response -> {
-                    System.out.println("Employee data:");
-                    System.out.println(response); // Print the employee data
-                });
+        try {
+            String responseBody = webClient.get()
+                    .uri(url)
+                    .retrieve()
+                    .bodyToMono(String.class)
+                    .block();
 
-        System.out.println("stuff" + webClient);
+            // Process successful response here
+            System.out.println("Successfully retrieved data:");
+            System.out.println(responseBody);
 
-        WebClient client = WebClient.create();
-
-        WebClient.ResponseSpec responseSpec = client.get()
-                .uri(url)
-                .retrieve();
-
-        var thing = responseSpec;
-
-        System.out.println("responseSpec is: " + responseSpec);
-
-
-
-
+        } catch (WebClientResponseException e) {
+            if (e.getStatusCode().is4xxClientError() && e.getStatusCode().equals(HttpStatus.TOO_MANY_REQUESTS)) {
+                System.out.println("Web server says too many requests. Please try again later.");
+            } else {
+                // Handle other client errors
+                System.out.println("An unexpected client error occurred: " + e.getMessage());
+            }
+        }
     }
-
-
-
-
-
 }
