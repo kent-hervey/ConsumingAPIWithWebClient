@@ -2,6 +2,7 @@ package com.example.webclientservice.clients;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import java.util.Scanner;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
@@ -22,11 +23,39 @@ public class EmployeeClient {
         this.webClient = webClient;
     }
 
-    public static void main(String[] args) {
-        final String url = "https://dummy.restapiexample.com/api/v1/employees";
+    private void presentMenu(EmployeeClient employeeClient) {
+        Scanner scanner = new Scanner(System.in);
 
-        // Create a WebClient instance
-        WebClient webClient = WebClient.create();
+        boolean exit = false;
+        do {
+
+            System.out.println("\nWelcome to the Animal App!");
+            System.out.println("1. List all employees (not yet implemented)");
+            System.out.println("2. Find an employee (not yet implemented)");
+            System.out.println("3. Add an employee (not yet implemented)");
+            System.out.println("4. Change an employee (not yet implemented)");
+            System.out.println("5. Delete an employee (not yet implemented)");
+            System.out.println("99. Exit");
+
+            int choice = scanner.nextInt();
+
+            switch (choice) {
+                case 1:
+                    System.out.println("The list of employees is:" + employeeClient.listEmployees());
+                    break;
+                case 99:
+                    System.out.println("Exit selected.");
+                    exit = true;
+                    break;
+                default:
+                    System.out.println("Invalid choice: " + choice);
+                    break;
+            }
+        } while (!exit);
+    }
+
+    private String listEmployees() {
+        String url = "https://dummy.restapiexample.com/api/v1/employees";
 
         try {
             String responseBody = webClient.get()
@@ -37,16 +66,16 @@ public class EmployeeClient {
 
             // Process successful response here
             System.out.println("Successfully retrieved data:");
-            System.out.println(prettifyMyJson(responseBody));
+            return prettifyMyJson(responseBody);
 
         } catch (WebClientResponseException e) {
-            if (e.getStatusCode().is4xxClientError() && e.getStatusCode().equals(HttpStatus.TOO_MANY_REQUESTS)) {
+            if (HttpStatus.TOO_MANY_REQUESTS.equals(e.getStatusCode())) {
                 System.out.println("Web server says too many requests. Please try again later.");
             } else {
-                // Handle other client errors
                 System.out.println("An unexpected client error occurred: " + e.getMessage());
             }
         }
+        return null;
     }
 
     private static String prettifyMyJson(String result) {
