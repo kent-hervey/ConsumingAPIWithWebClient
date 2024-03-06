@@ -1,4 +1,4 @@
-package com.example.webclientservice;
+package com.example.webclientservice.clients;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
@@ -7,7 +7,20 @@ import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 
 
-public class EmployeeApiClient {
+public class EmployeeClient {
+
+    private final WebClient webClient;
+    private static final ObjectMapper mapper = new ObjectMapper();
+
+    public static void main(String[] args) {
+        EmployeeClient employeeClient = new EmployeeClient(WebClient.create());
+        employeeClient.presentMenu(employeeClient);
+        System.out.println("Good bye, thanks for playing.");
+    }
+
+    public EmployeeClient(WebClient webClient) {
+        this.webClient = webClient;
+    }
 
     public static void main(String[] args) {
         final String url = "https://dummy.restapiexample.com/api/v1/employees";
@@ -39,7 +52,6 @@ public class EmployeeApiClient {
     private static String prettifyMyJson(String result) {
         String prettifiedJson = "";
         try {
-            ObjectMapper mapper = new ObjectMapper();
             mapper.enable(SerializationFeature.INDENT_OUTPUT);
             prettifiedJson = mapper.writeValueAsString(mapper.readValue(result, Object.class));
         } catch(Exception ex) {
@@ -47,5 +59,4 @@ public class EmployeeApiClient {
         }
         return prettifiedJson;
     }
-
 }
