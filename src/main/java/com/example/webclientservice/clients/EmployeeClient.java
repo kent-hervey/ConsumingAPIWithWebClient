@@ -30,8 +30,8 @@ public class EmployeeClient {
         do {
 
             System.out.println("\nWelcome to the Animal App!");
-            System.out.println("1. List all employees (not yet implemented)");
-            System.out.println("2. Find an employee (not yet implemented)");
+            System.out.println("1. List all employees");
+            System.out.println("2. Find an employee");
             System.out.println("3. Add an employee (not yet implemented)");
             System.out.println("4. Change an employee (not yet implemented)");
             System.out.println("5. Delete an employee (not yet implemented)");
@@ -42,6 +42,9 @@ public class EmployeeClient {
             switch (choice) {
                 case 1:
                     System.out.println("The list of employees is:" + employeeClient.listEmployees());
+                    break;
+                case 2:
+                    System.out.println("A single employee:" + employeeClient.findEmployeeById());
                     break;
                 case 99:
                     System.out.println("Exit selected.");
@@ -56,6 +59,34 @@ public class EmployeeClient {
 
     private String listEmployees() {
         String url = "https://dummy.restapiexample.com/api/v1/employees";
+
+        try {
+            String responseBody = webClient.get()
+                    .uri(url)
+                    .retrieve()
+                    .bodyToMono(String.class)
+                    .block();
+
+            // Process successful response here
+            System.out.println("Successfully retrieved data:");
+            return prettifyMyJson(responseBody);
+
+        } catch (WebClientResponseException e) {
+            if (HttpStatus.TOO_MANY_REQUESTS.equals(e.getStatusCode())) {
+                System.out.println("Web server says too many requests. Please try again later.");
+            } else {
+                System.out.println("An unexpected client error occurred: " + e.getMessage());
+            }
+        }
+        return null;
+    }
+
+    private String findEmployeeById() {
+        Scanner scanner = new Scanner(System.in);
+        System.out.println("Enter the id of the employee you want to find:  ");
+        long id = scanner.nextLong();
+        String url = "https://dummy.restapiexample.com/api/v1/employee/" + id;
+        System.out.println("You want employee id:  " + id);
 
         try {
             String responseBody = webClient.get()
