@@ -4,6 +4,9 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Scanner;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.reactive.function.BodyInserters;
@@ -85,7 +88,7 @@ public class EmployeeClient {
 
         } catch (WebClientResponseException e) {
             if (HttpStatus.TOO_MANY_REQUESTS.equals(e.getStatusCode())) {
-                System.out.println(TOO_MANY_REQUESTS_MESSAGE);
+                System.out.println(TOO_MANY_REQUESTS_MESSAGE + "list Employees");
             } else {
                 System.out.println(CLIENT_ERROR_OCCURRED + e.getMessage());
             }
@@ -112,7 +115,7 @@ public class EmployeeClient {
 
         } catch (WebClientResponseException e) {
             if (HttpStatus.TOO_MANY_REQUESTS.equals(e.getStatusCode())) {
-                System.out.println(TOO_MANY_REQUESTS_MESSAGE);
+                System.out.println(TOO_MANY_REQUESTS_MESSAGE + "findByEmployee");
             } else {
                 System.out.println(CLIENT_ERROR_OCCURRED + e.getMessage());
             }
@@ -136,8 +139,25 @@ public class EmployeeClient {
         String newEmployee = "You want to create employee with Name:  " + name + "  Annual Salary:  " + salary + "  Age:  " + age;
         System.out.println(newEmployee);
 
+       ObjectMapper mapper = new ObjectMapper();
+       Map<String, Object> stringToObject = new HashMap<>();
+       stringToObject.put("name", name);
+       stringToObject.put("salary", salary);
+       stringToObject.put("age", age);
+
+       String body;
+       try {
+           body = mapper.writeValueAsString(stringToObject);
+       } catch (JsonProcessingException e) {
+           // Handle JSON processing exception if occurs
+           e.printStackTrace();
+           // You can throw a custom exception or handle it differently
+           throw new RuntimeException("Error creating JSON body");
+       }
+
+
         try {
-            String body = "{\"name\":\"" + name + "\",\"salary\":\"" + salary + "\",\"age\":\"" + age + "\"}";
+            //String body = "{\"name\":\"" + name + "\",\"salary\":\"" + salary + "\",\"age\":\"" + age + "\"}";
             String responseBody = webClient.post()
                 .uri(url)
                 .body(BodyInserters.fromValue(body))
@@ -150,7 +170,7 @@ public class EmployeeClient {
 
         } catch (WebClientResponseException e) {
             if (HttpStatus.TOO_MANY_REQUESTS.equals(e.getStatusCode())) {
-                System.out.println(TOO_MANY_REQUESTS_MESSAGE);
+                System.out.println(TOO_MANY_REQUESTS_MESSAGE + "createEmployee try post");
             } else {
                 System.out.println(CLIENT_ERROR_OCCURRED + e.getMessage());
             }
@@ -164,9 +184,25 @@ public class EmployeeClient {
 
         String baseUrlPut = "https://dummy.restapiexample.com/api/v1/update/";
             System.out.println("break here");
-        String foundEmployee = employeeClient.findEmployeeById();
 
-            Mono<String> jsonStringMono = Mono.just(foundEmployee);
+            String foundEmployee = null;
+            try {
+                foundEmployee = employeeClient.findEmployeeById();
+            } catch (Exception e) {
+                System.out.println("in catch of find by Id in update");
+                throw new RuntimeException(e);
+            }
+
+            System.out.println("wondering if found employee is broken, here is foundEmployee" + foundEmployee);
+
+            final String[] name = {""};
+            final int[] age = {0};
+            final int[] salary = {0};
+
+            Mono<String> jsonStringMono = null;
+            try {
+                jsonStringMono = Mono.just(foundEmployee);
+
 
             jsonStringMono.subscribe(jsonString -> {
                 ObjectMapper mapper = new ObjectMapper();
@@ -181,18 +217,42 @@ public class EmployeeClient {
                 JsonNode dataNode = rootNode.path("data");
 
                 // Extract desired values
-                String name = dataNode.path("employee_name").asText();
-                int age = dataNode.path("employee_age").asInt();
-                int salary = dataNode.path("employee_salary").asInt();
+                name[0] = dataNode.path("employee_name").asText();
+                age[0] = dataNode.path("employee_age").asInt();
+                salary[0] = dataNode.path("employee_salary").asInt();
 
-                System.out.println("Employee Name: " + name);
-                System.out.println("Employee Age: " + age);
-                System.out.println("Employee Salary: " + salary);
+
+                System.out.println("Employee Name: " + name[0]);
+                System.out.println("Employee Age: " + age[0]);
+                System.out.println("Employee Salary: " + salary[0]);
             });
+
+            } catch (Exception e) {
+                System.out.println("in catch of mono");
+                //throw new RuntimeException(e);
+            }
+
+            String valueOfName = name[0];
+            System.out.println("qqname of employee is:  " + name[0]);
+            int valueOfAge = age[0];
+            System.out.println("qqage of employee is:  " + age[0]);
+            int valueOfSalary = salary[0];
+            System.out.println("qqsalary of employee is:  " + salary[0]);
+
+            Scanner scanner = new Scanner(System.in);
+
+            System.out.println("Current name is " + valueOfName + "enter new name or press enter to keep old name");
+            String nameInput = scanner.nextLine();
+            valueOfName = nameInput.length() > 0 ? nameInput : valueOfName;
+
+            System.out.println("so now the name will be " + valueOfName);
+
+
+
 
         System.out.println("break here");
 
-            System.out.println(foundEmployee);
+            //System.out.println(foundEmployee);
             return null;
 
 
