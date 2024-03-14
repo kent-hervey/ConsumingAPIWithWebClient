@@ -20,7 +20,7 @@ import reactor.core.publisher.Mono;
 
 public class EmployeeClient {
 
-    public static final String TOO_MANY_REQUESTS_MESSAGE = "Web server says too many requests. Please try again later. as of " + LocalTime.now();;
+    public static final String TOO_MANY_REQUESTS_MESSAGE = "Web server says too many requests. Please try again later. as of " + LocalTime.now();
     public static final String CLIENT_ERROR_OCCURRED = "An unexpected client error occurred: ";
     private final WebClient webClient;
     private static final ObjectMapper mapper = new ObjectMapper();
@@ -47,7 +47,7 @@ public class EmployeeClient {
             System.out.println("2. Find an employee");
             System.out.println("3. Add an employee ");
             System.out.println("4. Change an employee");
-            System.out.println("5. Delete an employee (not yet implemented)");
+            System.out.println("5. Delete an employee");
             System.out.println("99. Exit");
 
             int choice = scanner.nextInt();
@@ -64,6 +64,9 @@ public class EmployeeClient {
                     break;
                 case 4:
                     System.out.println("Create Employee:" + employeeClient.updateEmployee(this));
+                    break;
+                case 5:
+                    System.out.println("Delete Employee:" + employeeClient.deleteEmployee());
                     break;
                 case 99:
                     System.out.println("Exit selected.");
@@ -142,7 +145,6 @@ public class EmployeeClient {
         String newEmployee = "You want to create employee with Name:  " + name + "  Annual Salary:  " + salary + "  Age:  " + age;
         System.out.println(newEmployee);
 
-        //ObjectMapper mapper = new ObjectMapper();
         Map<String, Object> stringToObject = new HashMap<>();
         stringToObject.put("name", name);
         stringToObject.put("salary", salary);
@@ -151,7 +153,6 @@ public class EmployeeClient {
         String body;
         try {
             body = mapper.writeValueAsString(stringToObject);
-            String breakpoint = null;
         } catch (JsonProcessingException e) {
             // Handle JSON processing exception if occurs
             e.printStackTrace();
@@ -205,11 +206,9 @@ public class EmployeeClient {
             jsonStringMono = Mono.just(foundEmployee);
 
             jsonStringMono.subscribe(jsonString -> {
-                //ObjectMapper mapper = new ObjectMapper();
                 JsonNode rootNode = null;
                 try {
                     rootNode = mapper.readValue(jsonString, JsonNode.class);
-                    String breakpoint = null;
                 } catch (JsonProcessingException e) {
                     throw new RuntimeException(e);
                 }
@@ -256,7 +255,6 @@ public class EmployeeClient {
         valueOfSalary = !nameInput.isEmpty() ? salaryInput : valueOfSalary;
         System.out.println("The salary will be " + valueOfSalary);
 
-        //ObjectMapper mapper = new ObjectMapper();
         Map<String, Object> stringToObject = new HashMap<>();
         stringToObject.put("name", valueOfName);
         stringToObject.put("salary", valueOfSalary);
@@ -265,7 +263,6 @@ public class EmployeeClient {
         String body;
         try {
             body = mapper.writeValueAsString(stringToObject);
-            String breakpoint = null;
         } catch (JsonProcessingException e) {
             // Handle JSON processing exception if occurs
             e.printStackTrace();
@@ -302,13 +299,38 @@ public class EmployeeClient {
         }
         return null;  //TODO investigate if this is the prooper return
     }
+    private String deleteEmployee() {
+        Scanner scanner = new Scanner(System.in);
+        System.out.println("Enter the id of the employee:  ");
+        long id = scanner.nextLong();
+        String url = "https://dummy.restapiexample.com/api/v1/delete/" + id;
+        System.out.println("For employee with id of:  " + id);
+
+        try {
+            String responseBody = webClient.delete()
+                    .uri(url)
+                    .retrieve()
+                    .bodyToMono(String.class)
+                    .block();
+
+            System.out.println("Successfully deleted data:"); //TODO make into log statement
+            return prettifyMyJson(responseBody);
+
+        } catch (WebClientResponseException e) {
+            if (HttpStatus.TOO_MANY_REQUESTS.equals(e.getStatusCode())) {
+                System.out.println(TOO_MANY_REQUESTS_MESSAGE + " attempting findByEmployee");
+            } else {
+                System.out.println(CLIENT_ERROR_OCCURRED + e.getMessage());
+            }
+        }
+        return null;
+    }
 
     private static String prettifyMyJson(String result) {
         String prettifiedJson = "";
         try {
             mapper.enable(SerializationFeature.INDENT_OUTPUT);
             prettifiedJson = mapper.writeValueAsString(mapper.readValue(result, Object.class));
-            String breakpoint = null;
         } catch (Exception ex) {
             System.out.println("Error while pretty printing JSON: " + ex.getMessage());
         }
